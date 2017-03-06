@@ -100,18 +100,18 @@ void find_note(int n)
    /* if(n<0||n>=128){printf("Unbound note");}
     else*/
     {
-        if(n%12==0){printf("Do %d",n/12);}
-        else if(n%12==1){printf("Do# %d",n/12);}
-        else if(n%12==2){printf("Ré %d",n/12);}
-        else if(n%12==3){printf("Ré# %d",n/12);}
-        else if(n%12==4){printf("Mi %d",n/12);}
-        else if(n%12==5){printf("Fa %d",n/12);}
-        else if(n%12==6){printf("Fa# %d",n/12);}
-        else if(n%12==7){printf("Sol %d",n/12);}
-        else if(n%12==8){printf("Sol# %d",n/12);}
-        else if(n%12==9){printf("La %d",n/12);}
-        else if(n%12==10){printf("La# %d",n/12);}
-        else if(n%12==11){printf("Si %d",n/12);}
+        if(n%12==0){printf("Do %d",n/12 -1);}
+        else if(n%12==1){printf("Do# %d",n/12 -1);}
+        else if(n%12==2){printf("Ré %d",n/12 -1);}
+        else if(n%12==3){printf("Ré# %d",n/12 -1);}
+        else if(n%12==4){printf("Mi %d",n/12 -1);}
+        else if(n%12==5){printf("Fa %d",n/12 -1);}
+        else if(n%12==6){printf("Fa# %d",n/12 -1);}
+        else if(n%12==7){printf("Sol %d",n/12 -1);}
+        else if(n%12==8){printf("Sol# %d",n/12 -1);}
+        else if(n%12==9){printf("La %d",n/12 -1);}
+        else if(n%12==10){printf("La# %d",n/12 -1);}
+        else if(n%12==11){printf("Si %d",n/12 -1);}
     }
 }
 int time_calc(char s[4])
