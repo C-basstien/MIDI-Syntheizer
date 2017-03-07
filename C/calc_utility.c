@@ -9,9 +9,12 @@ unsigned int conv(char* s)
 	unsigned int i=0;
 	unsigned int l=strlen(s);
 	unsigned int res=0;
+	int c;
 	for(i=1;i<=l;i++)
 	{
-		res=res+((s[l-i]-'0')*pow(16,i-1));
+	 	if(s[l-i]>='0'&& s[l-i]< 58){c=s[l-i]-'0';}
+	 	else if(s[l-i]>=97&& s[l-i]< 103){c=s[l-i]-87;}
+		res=res+((c)*pow(16,i-1));
 	}
 	return res;
 }
@@ -62,4 +65,20 @@ int read_cmd(char* s,int l,FILE* F,char* r)
     if(cmpr(s,F)==1){return 1;}
     else{fseek (F,-l,SEEK_CUR);return 0;}
 
+}
+void read_text(char* s)
+{
+	int i;
+	int c; 
+	char t[3];
+	t[2]='\0';
+	int l=strlen(s);
+	printf("%s",s);
+	for(i=0;i<l;i+=2)
+	{
+		t[0]=s[i];t[1]=s[i+1];
+		printf("%c",conv(t));
+		//printf("%c",c);
+	}
+	
 }
