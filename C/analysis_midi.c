@@ -62,7 +62,13 @@ void analyse (void)
 		}
 		else if (read_cmd("ff01",2,fmiditxt,buffer))
 		{
-			/**Text**/	
+		    printf("[Text:");
+                    fread (buffer,1,2,fmiditxt);
+                    l=conv(buffer);
+                    clear(buffer,8);
+                    fread (buffer,1,l*2,fmiditxt);
+                    read_text(buffer);
+                    printf("]");	
 		}
 		else if (read_cmd("ff02",2,fmiditxt,buffer))
 		{
