@@ -28,7 +28,7 @@ void analyse (void)
             printf("\033[34m[Track chunk %d]\033[0m\n",ntrk);
 		    fread (buffer,1,8,fmiditxt);/*MTrk len in bytes  after this*/
             printf("\033[33m[%d information byte]\033[0m\n",conv(buffer));clear(buffer,8);
-            while(!(cmpr("ff2f",fmiditxt))==1)
+            while(!(cmpr("ff2f00",fmiditxt))==1)
             {
                 if (read_cmd("ff5804",2,fmiditxt,buffer))
                 {
@@ -48,6 +48,57 @@ void analyse (void)
                     fread (buffer,1,6,fmiditxt);
                     printf("%dµs by quater note]\n",conv(buffer));clear(buffer,8);
                 }
+		else if (read_cmd("ff5902",2,fmiditxt,buffer))
+		{
+			/**Key Signature**/
+		}    
+		else if (read_cmd("ff5902",2,fmiditxt,buffer))
+		{
+			/** SMTPE Offset*/
+		}
+		else if (read_cmd("ff0002",2,fmiditxt,buffer))
+		{
+			/**Sequence Number**/	
+		}
+		else if (read_cmd("ff01",2,fmiditxt,buffer))
+		{
+			/**Text**/	
+		}
+		else if (read_cmd("ff02",2,fmiditxt,buffer))
+		{
+			/**Copyright**/	
+		}
+		else if (read_cmd("ff03",2,fmiditxt,buffer))
+		{
+			/**Sequence/Track Name**/	
+		}
+		else if (read_cmd("ff04",2,fmiditxt,buffer))
+		{
+			/**Instrument Name **/	
+		}
+		else if (read_cmd("ff05",2,fmiditxt,buffer))
+		{
+			/**Lyric**/	
+		}
+		else if (read_cmd("ff06",2,fmiditxt,buffer))
+		{
+			/**Marker**/	
+		}
+		else if (read_cmd("ff07",2,fmiditxt,buffer))
+		{
+			/**Cue Point **/	
+		else if (read_cmd("ff2001cc",2,fmiditxt,buffer))
+		{
+			/**Channel**/	
+		}
+		else if (read_cmd("ff5405",2,fmiditxt,buffer))
+		{
+			/**starting point**/	
+		}
+		else if (read_cmd("ff7f",2,fmiditxt,buffer))
+		{
+			/**Sequencer-Specific Meta-event**/
+		}
                 else if (read_cmd("90",2,fmiditxt,buffer))
                 {
                     printf("[Note On ");clear(buffer,8);
