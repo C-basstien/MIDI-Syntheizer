@@ -1,4 +1,3 @@
-
 #ifndef MIDI_H
 #define MIDI_H
 
@@ -21,11 +20,12 @@ int read_midi(char* nom_fichier_midi);
 
 /**calc_utilit**/
 
-
-int read_cmd(char* s,int l,FILE* F,char* r);
+void read_text(FILE* F,int l);
 int cmpr(char* cmd, FILE * F);
+unsigned int get_time(char s[4],FILE* F);
 int time_calc(char s[4]);
 void find_note(int n);
+void print_note_noscale(int n);
 unsigned int conv(char* s);
 void clear(char* p,int l);
 
