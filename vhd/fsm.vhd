@@ -41,10 +41,21 @@ COMPONENT time_vlq IS
 END COMPONENT time_vlq;
    
 ARCHITECTURE fsm_midi_arch of fsm_midi IS
+  BEGIN
+   PROCESS nextglobalSTATE (clkMIDI)
+    BEGIN
+   END PROCESS nextglobalSTATE
   
+   PROCESS globalSTATE (state)
+    BEGIN
+   END PROCESS globalSTATE
 
-    
+   PROCESS   nexttrack_CHUNK_STATE (state)
+    BEGIN
+   END PROCESS globalSTATE  
 
-    
+   PROCESS  Track_CHUNK_STATE (state)
+    BEGIN
+   END PROCESS globalSTATE  
 
   BEGIN
