@@ -41,6 +41,11 @@ COMPONENT time_vlq IS
 END COMPONENT time_vlq;
    
 ARCHITECTURE fsm_midi_arch of fsm_midi IS
+ SIGNAL int MIDI_FILE_P;--pointeur dans la lecture du fichier MIDI
+                        --dans le cas d'un fichier MIDI de type 1 (cad:plusieurs pistes joué simultanément)
+                        --il faut implanter un tableau de pointeur de la taille du  nombre de track_chunk
+                        --Puis lancer une éxecution en parralèle
+                        -- On se limitera donc au fichier de type 2 et 0
   BEGIN
    PROCESS nextglobalSTATE (clkMIDI)
     BEGIN
@@ -54,11 +59,16 @@ ARCHITECTURE fsm_midi_arch of fsm_midi IS
     BEGIN
    END PROCESS globalSTATE  
 
-   PROCESS  Track_CHUNK_STATE (chunk_cmd)
+    track_chunk_state PROCESS (chunk_cmd)
+    NOTE_DATA<= '0';--indique à la partie calculant les notes quel doit prendre en compte cette donnée
+                    --par défaut elle est mis à 0 pour tout les autres évenments que NOTE_OFF et NOTE_ON
     BEGIN
      CASE chunk_cmd IS
       WHEN NOTE_OFF =>
+       NOTE_DATA<= '1';
+       NOTE_
       WHEN NOTE_ON =>
+       NOTE_DATA<= '1';
       WHEN POLY_AFT =>
       WHEN CTRL_CHG =>
       WHEN PRG_CHG =>
