@@ -54,8 +54,26 @@ ARCHITECTURE fsm_midi_arch of fsm_midi IS
     BEGIN
    END PROCESS globalSTATE  
 
-   PROCESS  Track_CHUNK_STATE (state)
+   PROCESS  Track_CHUNK_STATE (chunk_cmd)
     BEGIN
+     CASE chunk_cmd IS
+      WHEN NOTE_OFF =>
+      WHEN NOTE_ON =>
+      WHEN POLY_AFT =>
+      WHEN CTRL_CHG =>
+      WHEN PRG_CHG =>
+      WHEN CHAN_PRES =>
+      WHEN PITCH_RG =>
+      WHEN SYST_MESS =>
+      WHEN NUMB_SEQ =>
+      WHEN TEXT =>
+      WHEN TEMPO =>
+      WHEN SMTPE_OFFSET =>
+      WHEN TIME_SIGNATURE =>
+      WHEN KEY_SIGNATURE =>
+      WHEN SP_META=>
+      WHEN ENDCHUNK =>
+      WHEN OTHERS =>
    END PROCESS globalSTATE  
 
   BEGIN
