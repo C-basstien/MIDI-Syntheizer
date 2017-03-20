@@ -1,0 +1,8 @@
+
+vdel -lib  ${TP_PATH}/libs/lib_VHDL -all
+
+vlib ${TP_PATH}/libs/lib_VHDL
+
+vmap lib_VHDL ${TP_PATH}/libs/lib_VHDL 
+
+# vcom +acc -work lib_VHDL Code.vhd 
