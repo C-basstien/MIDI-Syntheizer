@@ -19,23 +19,39 @@ architecture A of MIDI_SYNTHETIZER is
 	component MIDI_FSM
 		port
 		(
-			clk: in  std_logic;
-			cmpr_state:in statecmpr;--état de la comparaison
-			cmpr_res:in  std_logic;--résultat de la dernière comparaison
-			cmpr_req:out std_logic;--demande d'une nouvelle comparaison
-			vlq_calc_state:statecalc;--état du calcul de la VLQ
-			vlq_res:in std_logic_vector(31 downto 0);--résultat du calcul de la VLQ
-			vlq_req:out std_logic;--demande d'un nouveau calcul d'une VLQ
+			clk: 					in std_logic;
+			---ports vers comp
+			cmpr_state:					in statecmpr;--état de la comparaison (en cours, fini)
+			cmpr_res:						in std_logic;--résultat de la dernière comparaison
+			cmpr_req:						out std_logic;--demande d'une nouvelle comparaison 
+			cmpr_length : 			out std_logic_vector(3 downto 0);--taille de la valeur à comparer
+			cmd:								out  str_cmd;--valeur d'une comande ou donnée à comparée
+			rom_comp_in: 				out  std_logic_vector(31 downto 0);--adresse initiale donée par la fsm
+			--ports vers vlq
+			vlq_calc_state:	in statecalc;--état du calcul de la VLQ
+			vlq_res:				in std_logic_vector(31 downto 0);--résultat du calcul de la VLQ
+			rom_vlq_in: 		out std_logic_vector(31 downto 0);--adresse initiale donée par la fsm
+			rom_vlq_out: 		out std_logic_vector(31 downto 0);--adresse incrémentée après la conversion de la donnée vlq
+			vlq_req:				out std_logic;--demande d'un nouveau calcul d'une VLQ
+			--ports vers la rom midi
 			midi_rom_adr : out std_logic_vector(32 downto 0);
+			rom_fsm_out  : out std_logic_vector(7 downto 0);
+			--ports vers la rom son
 			sound_rom_adr : out std_logic_vector(6 downto 0);
 		)
 	end component;
 	
 	component MIDI_ROM
-    port(
-    			midi_rom_adr:in std_logic_vector(31 downto 0);
-          midi_rom_out : out std_logic_vector(7 downto 0)) ;
-         )--une adresse mémoire contient un byte,2^32 bytes sont stockable
+	  port
+	  (
+			rom_fsm_address  : 	in  std_logic_vector(9 downto 0);
+			rom_comp_address :	in  std_logic_vector(9 downto 0);
+			rom_vlq_address  : 	in  std_logic_vector(9 downto 0);
+			--une adresse mémoire contient un byte,2^32 bytes sont stockable
+			rom_fsm_out    : 		out std_logic_vector(7 downto 0);
+			rom_comp_out    : 	out std_logic_vector(7 downto 0);
+			rom_vlq_out    : 		out std_logic_vector(7 downto 0);
+	   );
 	end component;
 	
 	component SOUND_ROM
@@ -47,26 +63,32 @@ architecture A of MIDI_SYNTHETIZER is
 	end component;
 	
 	component COMPARATOR
-	 	port
-	 	(	
-	 		clk: in std_logic;
-	 		req_comp: in std_logic;-- pour que la fsm demande une nouvelle comparaison
-	 		tab: in str_cmd;--valeur d'une comande ou donnée à comparée
-	 		midi_rom_adr: in std_logic_vector(31 downto 0);--adresse actuel à laquelle on lit les bytes
-			length : in std_logic_vector(3 downto 0);--taille de la valeur à comparer
-			state_comp: out statecmpr;--indique si la comparaison et toujours en cours ou fini à la fsm
-			res_comp : out  std_logic;--indique si le résultat de la comapraison est valide
-		)
+	 port
+	 (	
+	 		clk: 								in  std_logic;--clk pour faire un process séquentiel
+ 			reset: 							in  std_logic;-- reset pour initialisé l'état du comparateur
+	 		req_comp: 					in  std_logic;-- pour que la fsm demande une nouvelle comparaison
+	 		tab:								in  str_cmd;--valeur d'une comande ou donnée à comparée
+			length : 						in  std_logic_vector(3 downto 0);--taille de la valeur à comparer
+	 		rom_adr_in: 				in  std_logic_vector(31 downto 0);--adresse initiale donée par la fsm
+			rom_comp_address :	out std_logic_vector(31 downto 0);--adresse pour lire la mémoire en mode comparaison
+			state_comp:					out statecmpr;--indique si la comparaison et toujours en cours ou fini à la fsm
+			res_comp : 					out std_logic;--indique si le résultat de la comapraison est valide
+	)
 	end component;
 	
 	component VLQ_CALCULATOR
 	 	port
 	 	(	
-			clk: in std_logic;
-			req_vlq: in std_logic;
-			midi_rom_adr: in std_logic_vector(31 downto 0);
-			state_vlq: out statevlq;
-			res_vlq : out  std_logic_vector(31 downto 0);--résultat de la conversion en entier de la VLQ
+ 			clk: 							in std_logic;--clk pour faire un process séquentiel
+ 			reset: 						in std_logic;-- reset pour initialisé l'état du convertisseur
+			req_vlq: 					in std_logic;-- demande de conversion de la fsm
+			vlq_in:						in std_logic_vector(7 downto 0);--rélié à rom_vlq_out
+			rom_adr_in: 			in std_logic_vector(31 downto 0);--adresse initiale donée par la fsm
+			rom_adr_out: 			out std_logic_vector(31 downto 0);--adresse incrémentée après la conversion de la donnée vlq
+			rom_vlq_address :	out std_logic_vector(31 downto 0);--adresse pour lire la mémoire en mode conversion
+			state_vlq: 				out statevlq;--état de la conversion  signalé à la fsm
+			res_vlq : 				out std_logic_vector(31 downto 0);--résultat de la conversion en entier
 		)
 	end component;
 	
