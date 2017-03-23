@@ -1,89 +1,262 @@
-LIBRARY IEE
-USE IEEE.STD_LOGIC_1164.ALL
- 
-ENTITY fsm_midi IS
-  PORT
-    (
-     MIDI_data: IN STD_LOGIC_VECTOR (7 DOWNTO 0);
-     
-     VLQ_CALC: IN STD_LOGIC_VECTOR (32 DOWNTO 0);
-     VLQ_DATA: OUT STD_LOGIC_VECTOR (32 DOWNTO 0);
-     
-     COMP_CALC: IN STD_LOGIC;
-     VAL_COMP_A: OUT STD_LOGIC_VECTOR (32 DOWNTO 0);
-     VAL_COMP_B: OUT STD_LOGIC_VECTOR (32 DOWNTO 0);
-     
-     NOTES_PLAYS: STD_LOGIC_VECTOR (32 DOWNTO 0);
-     CLK STD_LOGIC;
-     CONV_data: OUT STD_LOGIC_VECTOR (7 DOWNTO 0);
-    )
-END ENTITY fsm_midi;
-  
- 
- COMPONENT compar_data_cmd IS
--- composant comparant la valeur numérique de la donée midi entrante MIDI_c_data (buffer de taille 8) avec value_c
---lenght_rd indique la longeur à lire
---str_prt indique la ou doit commencer la lecture
---res_c indique le résultat de la comparaison
-  PORT(
-        MIDI_c_data: IN STD_LOGIC_VECTOR (7 DOWNTO 0);
-        value_c:IN STD_LOGIC_VECTOR (7 DOWNTO 0);
-        length_rd: IN STD_LOGIC_VECTOR (2 DOWNTO 0);
-        res_c: OUT STD_LOGIC_VECTOR (7 DOWNTO 0);
-       )
-END COMPONENT time_vlq;
-  
-COMPONENT time_vlq IS
-  PORT(
-        MIDI_t_data: IN STD_LOGIC_VECTOR (7 DOWNTO 0);
-        res_t: OUT STD_LOGIC_VECTOR (7 DOWNTO 0);
-       )
-END COMPONENT time_vlq;
+library IEEE;
+use IEEE.std_logic_1164.all;
+use IEEE.numeric_std.all;
+
+
+entity MIDI_FSM is
+  port
+  (
+			clk: 							in std_logic;
+			reset:						in std_logic;
+			---ports vers comp
+			cmpr_state:				in statecmpr;--état de la comparaison (en cours, fini)
+			cmpr_res:					in std_logic;--résultat de la dernière comparaison
+			cmpr_req:					out std_logic;--demande d'une nouvelle comparaison 
+			cmpr_length : 		out std_logic_vector(3 downto 0);--taille de la valeur à comparer
+			cmd:							out  str_cmd;--valeur d'une comande ou donnée à comparée
+			rom_comp_in: 			out  std_logic_vector(31 downto 0);--adresse initiale donée par la fsm
+			--ports vers vlq
+			vlq_calc_state:		in statecalc;--état du calcul de la VLQ
+			vlq_res:					in std_logic_vector(31 downto 0);--résultat du calcul de la VLQ
+			rom_vlq_in: 			out std_logic_vector(31 downto 0);--adresse initiale donée par la fsm
+			rom_vlq_out: 			out std_logic_vector(31 downto 0);--adresse incrémentée après la conversion de la donnée vlq
+			vlq_req:					out std_logic;--demande d'un nouveau calcul d'une VLQ
+			--ports vers la rom midi
+			midi_rom_adr : 		out std_logic_vector(32 downto 0);
+			rom_fsm_out  :		out std_logic_vector(7 downto 0);
+			--ports vers la rom son
+			sound_rom_adr : 	out std_logic_vector(6 downto 0);
+  )
+
+end MIDI_FSM;
+-- Machine à états contrôlant le filtre numérique.
+
+
+
+architecture A of MID_FSM is
+
+type READ_STATE is (CMD,EOF);
+type CMDS is 
+(
+				NOTE_OFF,--8x
+				NOTE_ON,--9x
+				POLY_KEY_PRESSURE,--ax
+				CONTROL_CHANGE,--bx
+				PROGRAM_CHANGE,--cx
+				MONO_KEY_PRESSURE,--dx
+				PITCH_BEND,--ex
+				SYSTEM--fx
+);
+type SYSTEMS is 
+(
+				--COMMON MESSAGES
+				SYS_EXCLU,--f0
+				RESERVED1,--f1
+				SONG_POS_POINTER,--f2
+				RESERVED2,--f4
+				RESERVED3,--f5
+				TUNE_REQUEST,--f6
+				SYS_EXCLU_END,--f7
+				--REAL TIMES MESSAGES, not used
+				TIMING_CLK,--f8
+				RESERVED4,--f9
+				START,--fa
+				CONTINUE,--fb
+				STOP,--fc
+				RESERVED5,--fd
+				ACTIVE_SENSING,--fe
+				RESET--ff	
+);
+type META_EV is	
+(
+--meta_event = 0xFF + <meta_type> + <v_length> + <event_data_bytes>
    
-ARCHITECTURE fsm_midi_arch of fsm_midi IS
- SIGNAL int MIDI_FILE_P;--pointeur dans la lecture du fichier MIDI
-                        --dans le cas d'un fichier MIDI de type 1 (cad:plusieurs pistes joué simultanément)
-                        --il faut implanter un tableau de pointeur de la taille du  nombre de track_chunk
-                        --Puis lancer une éxecution en parralèle
-                        -- On se limitera donc au fichier de type 2 et 0
-  BEGIN
-   PROCESS nextglobalSTATE (clkMIDI)
-    BEGIN
-   END PROCESS nextglobalSTATE
-  
-   PROCESS globalSTATE (state)
-    BEGIN
-   END PROCESS globalSTATE
+				SQ_NUMB,--ff00
+				TXT,--ff01
+				COPYRIGHT,--ff02
+				TRK_NAME,--ff03
+				INST_NAME,--ff04
+				LYRIC,--ff05
+				MARKER,--ff06
+				CUE_POINT,--ff07
+				PRG_NAME,--ff08
+				DEVICE_NAME,--ff09
+				MIDI_CHANNEL_PR,--ff2001
+				MIDI_PORT,--ff2101
+				END_TRACK,--ff2f00
+				TEMPO,--ff5103
+				SMPTE_OFFSET,--ff5405
+				TIME_SIGNATURE,--ff5804
+				KEY_SIGNATURE,--ff5902
+				SEQ_SPECIFIC_EV,--ff7f
+);
+type CHUNK is 
+(
+				HEADER,--4d546864
+				TRACK,--4d54726b		
+);
 
-   PROCESS   nexttrack_CHUNK_STATE (state)
-    BEGIN
-   END PROCESS globalSTATE  
+signal cure_rom_fsm: std_logic_vector(31 downto 0);--adresse de la rom actuel
+signal next_rom_fsm: std_logic_vector(31 downto 0);			
 
-    track_chunk_state PROCESS (chunk_cmd)
-    NOTE_DATA<= '0';--indique à la partie calculant les notes quel doit prendre en compte cette donnée
-                    --par défaut elle est mis à 0 pour tout les autres évenments que NOTE_OFF et NOTE_ON
-    BEGIN
-     CASE chunk_cmd IS
-      WHEN NOTE_OFF =>
-       NOTE_DATA<= '1';
-       NOTE_
-      WHEN NOTE_ON =>
-       NOTE_DATA<= '1';
-      WHEN POLY_AFT =>
-      WHEN CTRL_CHG =>
-      WHEN PRG_CHG =>
-      WHEN CHAN_PRES =>
-      WHEN PITCH_RG =>
-      WHEN SYST_MESS =>
-      WHEN NUMB_SEQ =>
-      WHEN TEXT =>
-      WHEN TEMPO =>
-      WHEN SMTPE_OFFSET =>
-      WHEN TIME_SIGNATURE =>
-      WHEN KEY_SIGNATURE =>
-      WHEN SP_META=>
-      WHEN ENDCHUNK =>
-      WHEN OTHERS =>
-   END PROCESS globalSTATE  
+signal read_s : READ_STATE;
+signal chunk_s: CHUNK;
+signal cmd_s: CMDS;
+signal syst_s: SYSTEMS ;
+signal meta_s: META_EV;
+signal delta_time_s: unsigned(31 downto 0);--32bit to store large delta times
+signal count_byte: unsigned(31 downto 0);--compteur dans le fichier
+signal midi_type: unsigned(7 downto 0);--mais sut un bit en réalité
+signal note_lenght: unsigned(7 downto 0);
+signal isnoteevent: std_logic;--
 
-  BEGIN
+begin
+Rom_Address<=std_logic_vector(s_Rom_Address);
+Delay_Line_Address<=std_logic_vector(s_Delay_Line_Address);
+    FSM_NEXT_STATE: process(clk, reset)
+	
+	begin
+	if(clk'event and clk='1') then
+		if(reset='1') then 
+		current_state <= INIT;
+		count<=(others =>'0');--à voir
+		else
+		current_state<=next_state;
+		count<=count_next;
+		end if;
+	end if;
+    end process;
+
+
+    P_FSM: process(read_s,chunk_s,cmd_s,syst_s,meta_s,delta_time_s)
+    	
+	begin			
+		read_s <= READ_TIME;
+		chunk_s <= TRACK;
+		cmd_s <= NOTE_OFF;
+		syst_s <= STOP;
+		meta_s <= END_TRACK;
+		delta_time_s <= (others =>'0');
+		                
+
+		case read_s is
+
+			when CMD =>
+				if ( chunk_s == HEADER ) then
+					case count is --compteur pour savoir ou on se trouve dans le fichier
+								when 10 =>  midi_type <= read_reg(0,2); --fonction de lecture
+										=> note_lenght <= read_reg(2,2);
+										count <= '0' --mettre le compteur a 0 pour preparer la prochaine lecture de Track
+								others avancer_lecture;
+										
+				else 
+					chunk_s <= TRACK;
+					if ( count > '100' ) then
+					
+			rom_vlq_in<=
+			rom_vlq_out: 			out std_logic_vector(31 downto 0);--adresse incrémentée après la conversion de la donnée vlq
+			vlq_req:					out std_logic;--demande d'un nouveau calcul d'une VLQ
+								=> delta_time_s <= read_time --apres le nombre de bytes du track chunk on lit le temps avec la fontion read_time a definir et incrementer le compteur
+								=> cmd_s <= read_cmd --fonction pour lire les commandes
+								case cmd_s is
+									
+									when NOTE_OFF--8x														
+													=> isnoteevent <= '1';--on active le circuit de calcul de note
+													--aller chercher dans la table de sinus							
+									when NOTE_ON--9x
+													=> isnoteevent <= '1';--on active le circuit de calcul de note
+													--aller chercher dans la table de sinus
+									when POLY_KEY_PRESSURE--ax
+									--ignorer pour l'instant, lire 2 bytes
+									when CONTROL_CHANGE--bx
+									--ignorer pour l'instant, lire 2 bytes
+									when PROGRAM_CHANGE--cx
+									--ignorer pour l'instant, lire 1 bytes
+									when MONO_KEY_PRESSURE--dx
+									--ignorer pour l'instant, lire 1 bytes
+									when PITCH_BEND--ex
+									--ignorer pour l'instant, lire 2 bytes
+									when SYSTEM--fx
+										case syst_s is
+											when SYS_EXCLU--f0
+											--ignorer jusqu'à f7
+											when RESERVED1--f1
+											--ignorer lire 2 bytes
+											when SONG_POS_POINTER--f2
+											--ignorer 
+											when RESERVED2--f4
+											--ignorer 
+											when RESERVED3--f5
+											--ignorer 
+											when TUNE_REQUEST--f6
+											--ignorer 
+											when SYS_EXCLU_END--f7
+											--REAL TIMES MESSAGES, not used
+				
+											when TIMING_CLK--f8
+											--ignorer 
+											when RESERVED4--f9
+											--ignorer 
+											when START--fa
+											--ignorer 
+											when CONTINUE--fb
+											--ignorer 
+											when STOP--fc
+											--ignorer 
+											when RESERVED5--fd
+											--ignorer 
+											when ACTIVE_SENSING--fe
+											--ignorer 
+											when RESET--ff
+												case meta_s is
+													--début lire texte
+													when SQ_NUMB--ff00
+				
+													when TXT--ff01
+				
+													when COPYRIGHT--ff02
+				
+													when TRK_NAME--ff03
+			
+													when INST_NAME--ff04
+				
+													when LYRIC--ff05
+				
+													when MARKER--ff06
+				
+													when CUE_POINT--ff07
+				
+													when PRG_NAME--ff08
+				
+													when DEVICE_NAME--ff09
+				
+													when MIDI_CHANNEL_PR--ff2001
+				
+													when MIDI_PORT--ff2101
+													--fin lire texte
+				
+													when END_TRACK--ff2f00
+													--sortir de meta_s et syst_s et cmd_s et du if, goto ?
+														=> count <= "00000000000000000000000000000000"
+													when TEMPO--ff5103
+													--récupérer tempo et le mettre dans une 
+													--variable
+													when SMPTE_OFFSET--ff5405
+													--ignorer ?
+													when TIME_SIGNATURE--ff5804
+													--ignorer pour l'instant ?
+													when KEY_SIGNATURE--ff5902
+													--ignorer pour l'instant ?
+													when SEQ_SPECIFIC_EV--ff7f
+													--lire texte ?
+												end case;--meta_s
+										end case;--syst_s
+								end case; --cmd_s
+								=> count <= "00000000000000000000000000000000"
+						end if;--fin du track chunk
+						
+	
+		when others end_of_file; --l'autre état
+		end case;
+	end process;
+end A;
