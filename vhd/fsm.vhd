@@ -93,8 +93,13 @@ architecture A of MID_FSM is
 						if ( count > '100' ) then
 
 		-------------------------------------------
+				curr_statu_s					<=	WAIT_END;				
 				rom_vlq_out <= curr_rom_adress;
-				vlq_req			<= '1';--demande d'un nouveau calcul de temps au convertisseur
+				vlq_re
+				if (next_statu_s=WAIT_END)
+				else
+				end if;
+q			<= '1';--demande d'un nouveau calcul de temps au convertisseur
 													--tant que le processus n'est pas terminé on bascule dans un état wait
 		-------------------------------------------
 									=> delta_time_s <= read_time --apres le nombre de bytes du track chunk on lit le temps avec la fontion read_time a definir et incrementer le compteur
