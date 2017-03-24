@@ -1,6 +1,8 @@
 library IEEE;
 use IEEE.std_logic_1164.all;
 use IEEE.numeric_std.all;
+LIBRARY work;
+USE work.defs.all;
 
 entity MIDI_SYNTHETIZER is
 	port
