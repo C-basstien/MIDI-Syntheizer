@@ -15,7 +15,7 @@ entity VLQ_CALC is
  			clk: 								in std_logic;--clk pour faire un process séquentiel
  			reset: 							in std_logic;-- reset pour initialisé l'état du convertisseur
 			req_vlq: 						in std_logic;-- demande de conversion de la fsm
-			vlq_in:							in std_logic_vector(7 downto 0);--rélié à rom_vlq_ou
+			vlq_in:							in std_logic_vector(7 downto 0);--rélié à rom_vlq_out
 			rom_adr_in: 				in std_logic_vector(31 downto 0);--adresse initiale donée par la fsm
 			rom_adr_out: 				out std_logic_vector(31 downto 0);--adresse incrémentée après la comparaisonde la donnée vlq
 			rom_vlq_address :		out std_logic_vector(31 downto 0);--adresse pour lire la mémoire en mode conversion
