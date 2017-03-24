@@ -60,10 +60,15 @@ package DEFS is
           SMPTE_OFFSET,--ff5405
           TIME_SIGNATURE,--ff5804
           KEY_SIGNATURE,--ff5902
-          SEQ_SPECIFIC_EV,--ff7f
+          SEQ_SPECIFIC_EV--ff7f
   );
   type CHUNK is 
   (
           HEADER,--4d546864
           TRACK,--4d54726b		
+  );
+  type STATUS is
+  (
+          WAIT_END,
+          ACTIVE
   );
