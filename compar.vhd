@@ -2,7 +2,7 @@ library IEEE;
 use IEEE.std_logic_1164.all;
 use IEEE.numeric_std.all;
 
-type str_cmd    is array(3 downto 0) of std_logic_vector(7 downto 0);--représente une chaîne de caractère de la commande à lire
+
 type statecmpr is (TESTON,ENDOFTEST);--état de la comparaison
 			
 ----------------------------------------------------------------
